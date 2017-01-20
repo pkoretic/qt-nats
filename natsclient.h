@@ -9,7 +9,7 @@
 #include <QProcessEnvironment>
 
 //! main callback message
-using nMsgCallback = std::function<void(const QString &message, const QString &inbox, const QString &subject)>;
+using nMessageCallback = std::function<void(const QString &message, const QString &inbox, const QString &subject)>;
 
 //!
 //! \brief The NatsOptions struct
@@ -73,7 +73,7 @@ public:
     //! \return subscription id
     //! subscribe to given subject
     //! when message is received, callback is fired
-    uint64_t subscribe(const QString &subject, nMsgCallback callback);
+    uint64_t subscribe(const QString &subject, nMessageCallback callback);
 
     //!
     //! \brief subscribe
@@ -85,7 +85,7 @@ public:
     //! subscribe to given subject and queue
     //! when message is received, callback is fired
     //! each message will be delivered to only one subscriber per queue group
-    uint64_t subscribe(const QString &subject, const QString &queue, nMsgCallback callback);
+    uint64_t subscribe(const QString &subject, const QString &queue, nMessageCallback callback);
 
     NatsSubscription *subscribe(const QString &subject);
 
@@ -102,7 +102,7 @@ public:
     //! \param message
     //! \return
     //! make request using given subject and optional message
-    uint64_t request(const QString subject, const QString message, nMsgCallback callback);
+    uint64_t request(const QString subject, const QString message, nMessageCallback callback);
 
 signals:
 
@@ -166,7 +166,7 @@ private:
     //!
     //! \brief m_callbacks
     //! subscription callbacks
-    QHash<uint64_t, nMsgCallback> m_callbacks;
+    QHash<uint64_t, nMessageCallback> m_callbacks;
 
     //!
     //! \brief send_info
@@ -278,12 +278,12 @@ inline void NatsClient::publish(const QString &subject, const QString &message, 
     m_socket.write(body.toUtf8());
 }
 
-inline uint64_t NatsClient::subscribe(const QString &subject, nMsgCallback callback)
+inline uint64_t NatsClient::subscribe(const QString &subject, nMessageCallback callback)
 {
     return subscribe(subject, "", callback);
 }
 
-inline uint64_t NatsClient::subscribe(const QString &subject, const QString &queue, nMsgCallback callback)
+inline uint64_t NatsClient::subscribe(const QString &subject, const QString &queue, nMessageCallback callback)
 {
     m_callbacks[++m_ssid] = callback;
 
@@ -321,7 +321,7 @@ inline void NatsClient::unsubscribe(uint64_t ssid, int max_messages)
     m_socket.write(message.toUtf8());
 }
 
-inline uint64_t NatsClient::request(const QString subject, const QString message, nMsgCallback callback)
+inline uint64_t NatsClient::request(const QString subject, const QString message, nMessageCallback callback)
 {
     QString inbox = QUuid::createUuid().toString();
     uint64_t ssid = subscribe(inbox, callback);

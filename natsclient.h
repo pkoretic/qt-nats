@@ -10,6 +10,8 @@
 
 namespace Nats
 {
+    #define DEBUG(x) do { if (_debug_mode) { qDebug() << x; } } while (0)
+
     //! main callback message
     using MessageCallback = std::function<void(const QString &message, const QString &inbox, const QString &subject)>;
     using ConnectCallback = std::function<void()>;
@@ -195,7 +197,7 @@ namespace Nats
         _debug_mode = (env.value("DEBUG").indexOf("qt-nats") != -1);
 
         if(_debug_mode)
-            qDebug() << "debug_mode";
+            DEBUG("debug mode");
     }
 
     inline void Client::connect(const QString &host, uint64_t port, ConnectCallback callback)
@@ -210,12 +212,14 @@ namespace Nats
             qDebug() << "error" << socketError;
         });
 
+        // receive first info message and disconnect
         auto signal = std::make_shared<QMetaObject::Connection>();
         *signal = QObject::connect(&m_socket, &QTcpSocket::readyRead, [this, signal, options, callback]
         {
             QObject::disconnect(*signal);
 
-            qDebug() << m_socket.readLine();
+            auto info_message = m_socket.readAll();
+            DEBUG(info_message);
 
             send_info(options);
             set_listeners();
@@ -226,8 +230,7 @@ namespace Nats
             emit connected();
         });
 
-        if(_debug_mode)
-            qDebug() << "connect started" << host << port;
+        DEBUG("connect started" << host << port);
 
         m_socket.connectToHost(host, port);
     }
@@ -248,7 +251,9 @@ namespace Nats
         m_socket.waitForConnected();
         m_socket.waitForReadyRead();
 
-        qDebug() << m_socket.readLine();
+        // receive first info message
+        auto info_message = m_socket.readAll();
+        DEBUG(info_message);
 
         send_info(options);
         set_listeners();
@@ -268,7 +273,8 @@ namespace Nats
                 % "\"version\":" % "\"" % options.version % "\""
                 % "} " % CLRF;
 
-        qDebug() << "message:" << message;
+        DEBUG("message:" << message);
+
         m_socket.write(message.toUtf8());
     }
 
@@ -281,7 +287,7 @@ namespace Nats
     {
         QString body = "PUB " % subject % " " % inbox % (inbox.isEmpty() ? "" : " ") % QString::number(message.length()) % CLRF % message % CLRF;
 
-        qDebug() << "published:" << body;
+        DEBUG("published:" << body);
 
         m_socket.write(body.toUtf8());
     }
@@ -299,7 +305,7 @@ namespace Nats
 
         m_socket.write(message.toUtf8());
 
-        qDebug() << "subscribed:" << message;
+        DEBUG("subscribed:" << message);
 
         return m_ssid;
     }
@@ -324,7 +330,7 @@ namespace Nats
     {
         QString message = "UNSUB " % QString::number(ssid) % (max_messages > 0 ? QString(" %1").arg(max_messages) : "") % CLRF;
 
-        qDebug() << "unsubscribed:" << message;
+        DEBUG("unsubscribed:" << message);
 
         m_socket.write(message.toUtf8());
     }
@@ -342,7 +348,7 @@ namespace Nats
     //! TODO: disconnect handling
     inline void Client::set_listeners()
     {
-        qDebug() << "set listeners";
+        DEBUG("set listeners");
         QObject::connect(&m_socket, &QTcpSocket::readyRead, [this]
         {
             // add new data to buffer
@@ -365,7 +371,7 @@ namespace Nats
     // TODO: error on invalid message
     inline bool Client::process_inboud(const QStringRef &buffer)
     {
-        qDebug() << "handle message:" << buffer;
+        DEBUG("handle message:" << buffer);
 
         // track movement inside buffer for parsing
         int last_pos = 0, current_pos = 0;
@@ -387,7 +393,7 @@ namespace Nats
             // if this is PING operation, reply
             if(operation.compare("PING", Qt::CaseInsensitive) == 0)
             {
-                qDebug() << "sending pong";
+                DEBUG("sending pong");
                 m_socket.write(QString("PONG" % CLRF).toUtf8());
                 last_pos = current_pos + CLRF.length();
                 continue;
@@ -395,7 +401,7 @@ namespace Nats
             // +OK operation
             else if(operation.compare("+OK", Qt::CaseInsensitive) == 0)
             {
-                qDebug() << "+OK";
+                DEBUG("+OK");
                 last_pos = current_pos + CLRF.length();
                 continue;
             }
@@ -446,7 +452,7 @@ namespace Nats
 
             if(current_pos + message_len + CLRF.length() > buffer.length())
             {
-                qDebug() <<  "message not in buffer, waiting";
+                DEBUG("message not in buffer, waiting");
                 break;
             }
 
@@ -455,16 +461,10 @@ namespace Nats
             sid = parts[2];
             uint64_t ssid = sid.toLongLong();
 
-            qDebug() << "operation:" << operation;
-            qDebug() << "subject:" << subject;
-            qDebug() << "ssid:" << sid;
-            qDebug() << "inbox:" << inbox;
-            qDebug() << "message size:" << message_len;
-
             message = buffer.mid(current_pos, message_len);
             last_pos = current_pos + message_len + CLRF.length();
 
-            qDebug() << "message:" << message;
+            DEBUG("message:" << message);
 
             // call correct subscription callback
             if(m_callbacks.contains(ssid))
@@ -476,7 +476,6 @@ namespace Nats
         }
 
         // remove processed messages from buffer
-        qDebug()  << "removing from buffer:" << last_pos << m_buffer.length();
         m_buffer.remove(0, last_pos);
 
         return true;

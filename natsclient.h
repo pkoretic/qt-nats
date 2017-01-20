@@ -10,6 +10,7 @@
 
 //! main callback message
 using nMessageCallback = std::function<void(const QString &message, const QString &inbox, const QString &subject)>;
+using nConnectCallback = std::function<void()>;
 
 //!
 //! \brief The NatsOptions struct
@@ -119,8 +120,8 @@ public slots:
     //! \param port
     //! connect to server with given host and port options
     //! after valid connection is established 'connected' signal is emmited
-    void connect(const QString &host = "127.0.0.1", uint64_t port = 4222);
-    void connect(const QString &host, uint64_t port, const NatsOptions &options);
+    void connect(const QString &host = "127.0.0.1", uint64_t port = 4222, nConnectCallback callback = nullptr);
+    void connect(const QString &host, uint64_t port, const NatsOptions &options, nConnectCallback callback = nullptr);
 
     //!
     //! \brief connectSync
@@ -195,12 +196,12 @@ inline NatsClient::NatsClient(QObject *parent) : QObject(parent)
         qDebug() << "debug_mode";
 }
 
-inline void NatsClient::connect(const QString &host, uint64_t port)
+inline void NatsClient::connect(const QString &host, uint64_t port, nConnectCallback callback)
 {
-    connect(host, port, m_options);
+    connect(host, port, m_options, callback);
 }
 
-inline void NatsClient::connect(const QString &host, uint64_t port, const NatsOptions &options)
+inline void NatsClient::connect(const QString &host, uint64_t port, const NatsOptions &options, nConnectCallback callback)
 {
     QObject::connect(&m_socket, static_cast<void(QAbstractSocket::*)(QAbstractSocket::SocketError)>(&QAbstractSocket::error), [](QAbstractSocket::SocketError socketError)
     {
@@ -208,7 +209,7 @@ inline void NatsClient::connect(const QString &host, uint64_t port, const NatsOp
     });
 
     auto signal = std::make_shared<QMetaObject::Connection>();
-    *signal = QObject::connect(&m_socket, &QTcpSocket::readyRead, [this, signal, options]
+    *signal = QObject::connect(&m_socket, &QTcpSocket::readyRead, [this, signal, options, callback]
     {
         QObject::disconnect(*signal);
 
@@ -216,6 +217,9 @@ inline void NatsClient::connect(const QString &host, uint64_t port, const NatsOp
 
         send_info(options);
         set_listeners();
+
+        if(callback)
+            callback();
 
         emit connected();
     });

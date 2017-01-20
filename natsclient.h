@@ -9,7 +9,7 @@
 #include <QProcessEnvironment>
 
 //! main callback message
-using nMsgCallback = std::function<void(const QStringRef &message, const QStringRef &inbox, const QStringRef &subject)>;
+using nMsgCallback = std::function<void(const QString &message, const QString &inbox, const QString &subject)>;
 
 //!
 //! \brief The NatsOptions struct
@@ -65,6 +65,8 @@ public:
     //! when message is received, callback is fired
     //! each message will be delivered to only one subscriber per queue group
     uint64_t subscribe(const QString &subject, const QString &queue, nMsgCallback callback);
+
+    NatsSubscription *subscribe(const QString &subject);
 
     //!
     //! \brief unsubscribe
@@ -421,7 +423,7 @@ inline bool NatsClient::process_inboud(const QStringRef &buffer)
        // call correct subscription callback
        if(m_callbacks.contains(ssid))
        {
-           m_callbacks[ssid](message, inbox, subject);
+           m_callbacks[ssid](message.toString(), inbox.toString(), subject.toString());
 //           m_callbacks.remove(ssid); // TODO: remove after unsubscribed
        }
        else

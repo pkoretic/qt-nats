@@ -21,9 +21,9 @@ int main(int argc, char *argv[])
     client.connect("127.0.0.1", 4222, [&]
     {
         // simple subscribe
-        client.subscribe("foo", [](auto message, auto reply_inbox, auto subject)
+        client.subscribe("foo", [](auto message, auto inbox, auto subject)
         {
-            qDebug() << "received: " << message << reply_inbox << subject;
+            qDebug() << "received: " << message << inbox << subject;
         });
 
         // simple publish
@@ -33,3 +33,24 @@ int main(int argc, char *argv[])
     return a.exec();
 }
 ```
+
+## Basic usage
+
+```
+Nats::Client client;
+client.connect("127.0.0.1", 4222, [&]
+{
+    // simple publish
+    client.publish("foo", "Hello World!");
+
+    // simple subscribe
+    client.subscribe("foo", [](auto message, auto /* inbox */, auto /* subject */)
+    {
+        qDebug() << "received message: " << message;
+    });
+
+    // unsubscribe
+    int sid = client.subscribe("foo", [](auto, auto, auto){});
+    client.unsubscribe(sid);
+});
+````

@@ -226,7 +226,7 @@ inline void NatsClient::connect(const QString &host, uint64_t port, const NatsOp
 
 inline void NatsClient::connectSync(const QString &host, uint64_t port)
 {
-   connectSync(host, port, m_options);
+    connectSync(host, port, m_options);
 }
 
 inline void NatsClient::connectSync(const QString &host, uint64_t port, const NatsOptions &options)
@@ -364,6 +364,7 @@ inline bool NatsClient::process_inboud(const QStringRef &buffer)
 
     while(last_pos != buffer.length())
     {
+
         // we always get delimited message
         current_pos = buffer.indexOf(CLRF, last_pos);
         if(current_pos == -1)
@@ -376,95 +377,95 @@ inline bool NatsClient::process_inboud(const QStringRef &buffer)
         operation = buffer.mid(last_pos, current_pos - last_pos);
 
         // if this is PING operation, reply
-       if(operation.compare("PING", Qt::CaseInsensitive) == 0)
-       {
-           qDebug() << "sending pong";
-           m_socket.write(QString("PONG" % CLRF).toUtf8());
-           last_pos = current_pos + CLRF.length();
-           continue;
-       }
-       // +OK operation
-       else if(operation.compare("+OK", Qt::CaseInsensitive) == 0)
-       {
-           qDebug() << "+OK";
-           last_pos = current_pos + CLRF.length();
-           continue;
-       }
-       // if -ERR, close client connection | -ERR <error message>
-       else if(operation.indexOf("-ERR", 0, Qt::CaseInsensitive) != -1)
-       {
-           QStringRef error_message = operation.mid(4);
-           qCritical() << "error" << error_message;
+        if(operation.compare("PING", Qt::CaseInsensitive) == 0)
+        {
+            qDebug() << "sending pong";
+            m_socket.write(QString("PONG" % CLRF).toUtf8());
+            last_pos = current_pos + CLRF.length();
+            continue;
+        }
+        // +OK operation
+        else if(operation.compare("+OK", Qt::CaseInsensitive) == 0)
+        {
+            qDebug() << "+OK";
+            last_pos = current_pos + CLRF.length();
+            continue;
+        }
+        // if -ERR, close client connection | -ERR <error message>
+        else if(operation.indexOf("-ERR", 0, Qt::CaseInsensitive) != -1)
+        {
+            QStringRef error_message = operation.mid(4);
+            qCritical() << "error" << error_message;
 
-           if(error_message.compare("Invalid Subject") != 0)
-               m_socket.close();
+            if(error_message.compare("Invalid Subject") != 0)
+                m_socket.close();
 
-           return false;
-       }
-       // only MSG should be now left
-       else if(operation.indexOf("MSG", Qt::CaseInsensitive) == -1)
-       {
-           qCritical() << "invalid message";
-           return false;
-       }
+            return false;
+        }
+        // only MSG should be now left
+        else if(operation.indexOf("MSG", Qt::CaseInsensitive) == -1)
+        {
+            qCritical() << "invalid message";
+            return false;
+        }
 
-       // extract MSG data
-       // MSG format is: 'MSG <subject> <sid> [reply-to] <#bytes>\r\n[payload]\r\n'
-       // extract message_len = bytes and check if there is a message in this buffer
-       // if not, wait for next call, otherwise, extract all data
+        // extract MSG data
+        // MSG format is: 'MSG <subject> <sid> [reply-to] <#bytes>\r\n[payload]\r\n'
+        // extract message_len = bytes and check if there is a message in this buffer
+        // if not, wait for next call, otherwise, extract all data
 
-       int message_len = 0;
-       QStringRef subject, sid, inbox;
+        int message_len = 0;
+        QStringRef subject, sid, inbox;
 
-       QVector<QStringRef> parts = operation.split(" ", QString::SkipEmptyParts);
+        QVector<QStringRef> parts = operation.split(" ", QString::SkipEmptyParts);
 
-       current_pos += CLRF.length();
+        current_pos += CLRF.length();
 
-       if(parts.length() == 4)
-       {
-          message_len = parts[3].toLong();
-       }
-       else if (parts.length() == 5)
-       {
-           inbox = parts[3];
-           message_len = parts[4].toLong();
-       }
-       else
-       {
-           qCritical() <<  "invalid message";
-           break;
-       }
+        if(parts.length() == 4)
+        {
+            message_len = parts[3].toLong();
+        }
+        else if (parts.length() == 5)
+        {
+            inbox = parts[3];
+            message_len = parts[4].toLong();
+        }
+        else
+        {
+            qCritical() <<  "invalid message";
+            break;
+        }
 
-       if(current_pos + message_len + CLRF.length() > buffer.length())
-       {
-           qDebug() <<  "message not in buffer, waiting";
-           break;
-       }
+        if(current_pos + message_len + CLRF.length() > buffer.length())
+        {
+            qDebug() <<  "message not in buffer, waiting";
+            break;
+        }
 
-       operation = parts[0];
-       subject = parts[1];
-       sid = parts[2];
-       uint64_t ssid = sid.toLongLong();
+        operation = parts[0];
+        subject = parts[1];
+        sid = parts[2];
+        uint64_t ssid = sid.toLongLong();
 
-       qDebug() << "operation:" << operation;
-       qDebug() << "subject:" << subject;
-       qDebug() << "ssid:" << sid;
-       qDebug() << "inbox:" << inbox;
-       qDebug() << "message size:" << message_len;
+        qDebug() << "operation:" << operation;
+        qDebug() << "subject:" << subject;
+        qDebug() << "ssid:" << sid;
+        qDebug() << "inbox:" << inbox;
+        qDebug() << "message size:" << message_len;
 
-       message = buffer.mid(current_pos, message_len);
-       last_pos = current_pos + message_len + CLRF.length();
+        message = buffer.mid(current_pos, message_len);
+        last_pos = current_pos + message_len + CLRF.length();
 
-       qDebug() << "message:" << message;
+        qDebug() << "message:" << message;
 
-       // call correct subscription callback
-       if(m_callbacks.contains(ssid))
-       {
-           m_callbacks[ssid](message.toString(), inbox.toString(), subject.toString());
-//           m_callbacks.remove(ssid); // TODO: remove after unsubscribed
-       }
-       else
-           qWarning() << "invalid callback";
+        // call correct subscription callback
+        if(m_callbacks.contains(ssid))
+        {
+            m_callbacks[ssid](message.toString(), inbox.toString(), subject.toString());
+            //           m_callbacks.remove(ssid); // TODO: remove after unsubscribed
+        }
+        else
+            qWarning() << "invalid callback";
     }
 
     // remove processed messages from buffer

@@ -24,9 +24,9 @@ struct NatsOptions
 
     bool pedantic = false;
     bool ssl_required = false;
-    QString name = "";
-    QString lang = "cpp";
-    QString version = "1.0.0";
+    QString name = "qt-nats";
+    const QString lang = "cpp";
+    const QString version = "1.0.0";
 };
 
 //!

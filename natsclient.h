@@ -29,6 +29,27 @@ struct NatsOptions
 };
 
 //!
+//! \brief The NatsSubscription class
+//! holds subscription data and emits signal when ready
+class NatsSubscription : public QObject
+{
+    Q_OBJECT
+
+public:
+    explicit NatsSubscription(QObject *parent = 0): QObject(parent) {}
+
+    QString error;
+    QString subject;
+    QString message;
+    QString inbox;
+    uint64_t ssid = 0;
+
+signals:
+
+    void received();
+};
+
+//!
 //! \brief The NatsClient class
 //! main client class
 class NatsClient : public QObject
@@ -273,6 +294,22 @@ inline uint64_t NatsClient::subscribe(const QString &subject, const QString &que
     qDebug() << "subscribed:" << message;
 
     return m_ssid;
+}
+
+inline NatsSubscription *NatsClient::subscribe(const QString &subject)
+{
+    auto subscription = new NatsSubscription;
+
+    subscription->ssid = subscribe(subject, "", [this, subscription](const QString &message, const QString &subject, const QString &inbox)
+    {
+        subscription->message = message;
+        subscription->subject = subject;
+        subscription->inbox = inbox;
+
+        emit subscription->received();
+    });
+
+    return subscription;
 }
 
 inline void NatsClient::unsubscribe(uint64_t ssid, int max_messages)

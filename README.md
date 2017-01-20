@@ -5,7 +5,8 @@ A [Qt5](https://www.qt.io) C++11/14 client for the [NATS messaging system](https
 
 ## Installation
 
-This is a header-only library. All you have to do is include it inside your project:
+This is a header-only library that depends on Qt5. All you have to do is include it inside your
+project:
 
 ```
 #include <QCoreApplication>
@@ -16,20 +17,16 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
 
     NatsClient client;
-    client.connect();
-
-    QObject::connect(&client, &NatsClient::connected, [&client]
+    client.connect("127.0.0.1", 4222, [&]
     {
         // simple subscribe
         client.subscribe("foo", [](auto message, auto reply_inbox, auto subject)
         {
-            qDebug() << "received message:" << message;
-            qDebug() << "received subject:" << subject;
-            qDebug() << "received reply inbox:" << reply_inbox;
+            qDebug() << "received: " << message << reply_inbox << subject;
         });
 
         // simple publish
-        client.publish("foo", "hello world");
+        client.publish("foo", "Hello NATS!");
     });
 
     return a.exec();

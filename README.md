@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    NatsClient client;
+    Nats::Client client;
     client.connect("127.0.0.1", 4222, [&]
     {
         // simple subscribe

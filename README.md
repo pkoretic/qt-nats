@@ -54,7 +54,7 @@ client.connect("127.0.0.1", 4222, [&]
     client.unsubscribe(sid);
 
     // request
-    client.request("help", [](auto message, auto reply_inbox, auto /* subject */)
+    client.request("help", [&](auto /* message */, auto reply_inbox, auto /* subject */)
     {
         client.publish(reply_inbox, "I can help");
     });

@@ -108,6 +108,7 @@ namespace Nats
         //! \return
         //! make request using given subject and optional message
         uint64_t request(const QString subject, const QString message, MessageCallback callback);
+        uint64_t request(const QString subject, MessageCallback callback);
 
     signals:
 
@@ -333,6 +334,11 @@ namespace Nats
         DEBUG("unsubscribed:" << message);
 
         m_socket.write(message.toUtf8());
+    }
+
+    inline uint64_t Client::request(const QString subject, MessageCallback callback)
+    {
+        return request(subject, "", callback);
     }
 
     inline uint64_t Client::request(const QString subject, const QString message, MessageCallback callback)

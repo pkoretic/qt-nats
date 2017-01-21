@@ -1,5 +1,4 @@
 #include <QCoreApplication>
-#include <QElapsedTimer>
 
 #include "../../natsclient.h"
 

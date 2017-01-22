@@ -61,8 +61,22 @@ client.connect("127.0.0.1", 4222, [&]
 });
 ```
 
-## Authentication
 
+## Queue Groups
+
+All subscriptions with the same queue name will form a queue group.  Each
+message will be delivered to only one subscriber per queue group, queuing
+semantics. You can have as many queue groups as you wish.  Normal subscribers
+will continue to work as expected.
+
+```
+client.subscribe("foo", "job.workers", [](QString message, QString reply_inbox, QString subject)
+{
+    qDebug().noquote() << "received message:" << message << subject << reply_inbox;
+});
+```
+
+## Authentication
 
 ```
 Nats::Client client;

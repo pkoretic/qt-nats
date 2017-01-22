@@ -2,7 +2,7 @@
 #define NATSCLIENT_H
 
 #include <QObject>
-#include <QTcpSocket>
+#include <QSslSocket>
 #include <QHash>
 #include <QStringBuilder>
 #include <QUuid>
@@ -13,7 +13,7 @@ namespace Nats
     #define DEBUG(x) do { if (_debug_mode) { qDebug() << x; } } while (0)
 
     //! main callback message
-    using MessageCallback = std::function<void(const QString &message, const QString &inbox, const QString &subject)>;
+    using MessageCallback = std::function<void(QString &&message, QString &&inbox, QString &&subject)>;
     using ConnectCallback = std::function<void()>;
 
     //!
@@ -35,7 +35,7 @@ namespace Nats
 
     //!
     //! \brief The Subscription class
-    //! holds subscription data and emits signal when ready
+    //! holds subscription data and emits signal when ready as alternative to callbacks
     class Subscription : public QObject
     {
         Q_OBJECT
@@ -92,6 +92,11 @@ namespace Nats
         //! each message will be delivered to only one subscriber per queue group
         uint64_t subscribe(const QString &subject, const QString &queue, MessageCallback callback);
 
+        //!
+        //! \brief subscribe
+        //! \param subject
+        //! \return
+        //! return subscription class holding result for signal/slot version
         Subscription *subscribe(const QString &subject);
 
         //!
@@ -162,7 +167,7 @@ namespace Nats
         //!
         //! \brief m_socket
         //! main tcp socket
-        QTcpSocket m_socket;
+        QSslSocket m_socket;
 
         //!
         //! \brief m_options
@@ -215,7 +220,7 @@ namespace Nats
 
         // receive first info message and disconnect
         auto signal = std::make_shared<QMetaObject::Connection>();
-        *signal = QObject::connect(&m_socket, &QTcpSocket::readyRead, [this, signal, options, callback]
+        *signal = QObject::connect(&m_socket, &QSslSocket::readyRead, [this, signal, options, callback]
         {
             QObject::disconnect(*signal);
 
@@ -355,7 +360,7 @@ namespace Nats
     inline void Client::set_listeners()
     {
         DEBUG("set listeners");
-        QObject::connect(&m_socket, &QTcpSocket::readyRead, [this]
+        QObject::connect(&m_socket, &QSslSocket::readyRead, [this]
         {
             // add new data to buffer
             m_buffer +=  m_socket.readAll();

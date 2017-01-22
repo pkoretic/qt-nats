@@ -1,0 +1,12 @@
+BasedOnStyle:  WebKit
+PointerAlignment: Right
+Standard:        Cpp11
+TabWidth:        4
+UseTab:          Never
+BreakBeforeBraces: Allman
+AllowShortFunctionsOnASingleLine: false
+ContinuationIndentWidth: 4
+IndentCaseLabels: true
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: All
+ColumnLimit: 100

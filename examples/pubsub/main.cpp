@@ -8,13 +8,13 @@ int main(int argc, char *argv[])
 
     QCoreApplication a(argc, argv);
 
-    NatsClient client;
+    Nats::Client client;
 
     qDebug() << "client connecting";
 
     client.connect("127.0.0.1", 4222, [&client]
     {
-        client.subscribe("foo*", [](auto message, auto reply_inbox, auto subject)
+        client.subscribe("foo*", [](QString message, QString reply_inbox, QString subject)
         {
             qDebug().noquote() << "received message:" << message << subject << reply_inbox;
         });

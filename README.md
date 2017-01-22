@@ -82,6 +82,7 @@ client.subscribe("foo", "job.workers", [](QString message, QString reply_inbox, 
 Nats::Client client;
 Nats::Options options;
 
+// username/password
 options.user = "user";
 options.pass = "pass";
 
@@ -89,4 +90,13 @@ client.connect("127.0.0.1", 4222, options, []
 {
     ...
 });
+
+// token
+options.token = "mytoken";
+
+client.connect("127.0.0.1", 4222, options, []
+{
+    ...
+});
+
 ```

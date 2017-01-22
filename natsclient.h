@@ -31,6 +31,9 @@ namespace Nats
         QString name = "qt-nats";
         const QString lang = "cpp";
         const QString version = "1.0.0";
+        QString user;
+        QString pass;
+        QString token;
     };
 
     //!
@@ -276,7 +279,9 @@ namespace Nats
                 % "\"ssl_required\":" % (options.ssl_required ? "true" : "false") % ","
                 % "\"name\":" % "\"" % options.name % "\","
                 % "\"lang\":" % "\"" %options.lang % "\","
-                % "\"version\":" % "\"" % options.version % "\""
+                % "\"user\":" % "\"" % options.user % "\","
+                % "\"pass\":" % "\"" % options.pass % "\","
+                % "\"auth_token\":" % "\"" % options.token % "\""
                 % "} " % CLRF;
 
         DEBUG("message:" << message);

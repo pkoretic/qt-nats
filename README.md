@@ -1,5 +1,5 @@
 # qt-nats
-A [Qt5](https://www.qt.io) C++11/14 client for the [NATS messaging system](https://nats.io).
+A [Qt5](https://www.qt.io) C++11 client for the [NATS messaging system](https://nats.io).
 
 [![License MIT](https://img.shields.io/npm/l/express.svg)](http://opensource.org/licenses/MIT)
 [![Language (C++)](https://img.shields.io/badge/powered_by-C++-green.svg?style=flat-square)](https://img.shields.io/badge/powered_by-C++-green.svg?style=flat-square)

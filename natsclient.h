@@ -24,7 +24,7 @@ namespace Nats
         //!
         //! \brief verbose
         //!
-        bool verbose = true;
+        bool verbose = false;
 
         bool pedantic = false;
         bool ssl_required = false;

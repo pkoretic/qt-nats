@@ -59,7 +59,7 @@ client.connect("127.0.0.1", 4222, [&]
         client.publish(reply_inbox, "I can help");
     });
 });
-````
+```
 
 ## Authentication
 

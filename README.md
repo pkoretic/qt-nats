@@ -60,3 +60,19 @@ client.connect("127.0.0.1", 4222, [&]
     });
 });
 ````
+
+## Authentication
+
+
+```
+Nats::Client client;
+Nats::Options options;
+
+options.user = "user";
+options.pass = "pass";
+
+client.connect("127.0.0.1", 4222, options, []
+{
+    ...
+});
+```

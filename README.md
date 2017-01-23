@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     client.connect("127.0.0.1", 4222, [&]
     {
         // simple subscribe
-        client.subscribe("foo", [](auto message, auto inbox, auto subject)
+        client.subscribe("foo", [](QString message, QString inbox, QString subject)
         {
             qDebug() << "received: " << message << inbox << subject;
         });
@@ -44,7 +44,7 @@ client.connect("127.0.0.1", 4222, [&]
     client.publish("foo", "Hello World!");
 
     // simple subscribe
-    client.subscribe("foo", [](auto message, auto /* inbox */, auto /* subject */)
+    client.subscribe("foo", [](QString message, QString /* inbox */, QString /* subject */)
     {
         qDebug() << "received message: " << message;
     });
@@ -54,7 +54,7 @@ client.connect("127.0.0.1", 4222, [&]
     client.unsubscribe(sid);
 
     // request
-    client.request("help", [&](auto /* message */, auto reply_inbox, auto /* subject */)
+    client.request("help", [&](QString /* message */, QString reply_inbox, QString /* subject */)
     {
         client.publish(reply_inbox, "I can help");
     });

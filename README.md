@@ -1,8 +1,8 @@
 # qt-nats
 A [Qt5](https://www.qt.io) C++11 client for the [NATS messaging system](https://nats.io).
 
-[![License MIT](https://img.shields.io/npm/l/express.svg)](http://opensource.org/licenses/MIT)
-[![Language (C++)](https://img.shields.io/badge/powered_by-C++-green.svg?style=flat-square)](https://img.shields.io/badge/powered_by-C++-green.svg?style=flat-square)
+[![License MIT](https://cdn.rawgit.com/pkoretic/qt-nats/badges/license.svg)](http://opensource.org/licenses/MIT)
+[![Language (C++)](https://cdn.rawgit.com/pkoretic/qt-nats/badges/powered_by-C%2B%2B-blue.svg)](http://en.cppreference.com/w/cpp/language)
 
 ## Installation
 

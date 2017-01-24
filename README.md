@@ -100,3 +100,19 @@ client.connect("127.0.0.1", 4222, options, []
 });
 
 ```
+
+## TLS/SSL
+```
+Nats::Client client;
+Nats::Options options;
+
+// for development
+options.ssl_verify = false;
+
+// to provide relevant options user options.ssl_ca, options.ssl_key, options.ssl_cert
+
+client.connect("127.0.0.1", 4222, options, [&client]
+{
+    ...
+});
+```

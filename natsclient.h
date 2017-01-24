@@ -8,6 +8,8 @@
 #include <QUuid>
 #include <QProcessEnvironment>
 
+#include <memory>
+
 namespace Nats
 {
     #define DEBUG(x) do { if (_debug_mode) { qDebug() << x; } } while (0)

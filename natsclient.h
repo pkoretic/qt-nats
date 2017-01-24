@@ -1,12 +1,15 @@
 #ifndef NATSCLIENT_H
 #define NATSCLIENT_H
 
-#include <QObject>
-#include <QSslSocket>
 #include <QHash>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QObject>
+#include <QProcessEnvironment>
+#include <QSslConfiguration>
+#include <QSslSocket>
 #include <QStringBuilder>
 #include <QUuid>
-#include <QProcessEnvironment>
 
 #include <memory>
 
@@ -30,6 +33,11 @@ namespace Nats
 
         bool pedantic = false;
         bool ssl_required = false;
+        bool ssl = false;
+        bool ssl_verify = true;
+        QString ssl_key;
+        QString ssl_cert;
+        QString ssl_ca;
         QString name = "qt-nats";
         const QString lang = "cpp";
         const QString version = "1.0.0";
@@ -220,7 +228,25 @@ namespace Nats
     {
         QObject::connect(&m_socket, static_cast<void(QAbstractSocket::*)(QAbstractSocket::SocketError)>(&QAbstractSocket::error), [](QAbstractSocket::SocketError socketError)
         {
-            qDebug() << "error" << socketError;
+            qCritical() << "error" << socketError;
+        });
+
+        QObject::connect(&m_socket, static_cast<void(QSslSocket::*)(const QList<QSslError> &)>(&QSslSocket::sslErrors),[this](const QList<QSslError> &errors)
+        {
+            qWarning() << errors;
+        });
+
+        QObject::connect(&m_socket, &QSslSocket::encrypted, [this, options, callback]
+        {
+                DEBUG("SSL/TLS successful");
+
+                send_info(options);
+                set_listeners();
+
+                if(callback)
+                    callback();
+
+                emit connected();
         });
 
         // receive first info message and disconnect
@@ -229,17 +255,45 @@ namespace Nats
         {
             QObject::disconnect(*signal);
 
-            auto info_message = m_socket.readAll();
+            QByteArray info_message = m_socket.readAll();
             DEBUG(info_message);
 
-            send_info(options);
-            set_listeners();
+            QJsonObject json = QJsonDocument::fromJson(info_message.mid(5)).object();
+            bool ssl_required = json.value("ssl_required").toBool();
 
-            if(callback)
-                callback();
+            // if client or server wants ssl start encryption
+            if(options.ssl || options.ssl_required || ssl_required)
+            {
+                DEBUG("starting SSL/TLS encryption");
+                if(!options.ssl_verify)
+                    m_socket.setPeerVerifyMode(QSslSocket::VerifyNone);
 
-            emit connected();
+                if(!options.ssl_ca.isEmpty())
+                {
+                    QSslConfiguration config = m_socket.sslConfiguration();
+                    config.setCaCertificates(QSslCertificate::fromPath(options.ssl_ca));
+                }
+
+                if(!options.ssl_key.isEmpty())
+                    m_socket.setPrivateKey(options.ssl_key);
+
+                if(!options.ssl_cert.isEmpty())
+                    m_socket.setLocalCertificate(options.ssl_cert);
+
+                m_socket.startClientEncryption();
+            }
+            else
+            {
+                send_info(options);
+                set_listeners();
+
+                if(callback)
+                    callback();
+
+                emit connected();
+            }
         });
+
 
         DEBUG("connect started" << host << port);
 
@@ -286,7 +340,7 @@ namespace Nats
                 % "\"auth_token\":" % "\"" % options.token % "\""
                 % "} " % CLRF;
 
-        DEBUG("message:" << message);
+        DEBUG("send info message:" << message);
 
         m_socket.write(message.toUtf8());
     }

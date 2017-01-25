@@ -50,7 +50,7 @@ client.connect("127.0.0.1", 4222, [&]
     });
 
     // unsubscribe
-    int sid = client.subscribe("foo", [](auto, auto, auto){});
+    int sid = client.subscribe("foo", [](QString, QString, QString){});
     client.unsubscribe(sid);
 
     // request
@@ -109,7 +109,7 @@ Nats::Options options;
 // for development
 options.ssl_verify = false;
 
-// to provide relevant options user options.ssl_ca, options.ssl_key, options.ssl_cert
+// to provide relevant options use options.ssl_ca, options.ssl_key, options.ssl_cert
 
 client.connect("127.0.0.1", 4222, options, [&client]
 {

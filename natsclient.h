@@ -199,6 +199,13 @@ namespace Nats
         void send_info(const Options &options);
 
         //!
+        //! \brief parse_info
+        //! \param message
+        //! \return
+        //! parse INFO message from server and return json object with data
+        QJsonObject parse_info(const QByteArray &message);
+
+        //!
         //! \brief set_listeners
         //! set connection listeners
         void set_listeners();
@@ -256,9 +263,8 @@ namespace Nats
             QObject::disconnect(*signal);
 
             QByteArray info_message = m_socket.readAll();
-            DEBUG(info_message);
 
-            QJsonObject json = QJsonDocument::fromJson(info_message.mid(5)).object();
+            QJsonObject json = parse_info(info_message);
             bool ssl_required = json.value(QStringLiteral("ssl_required")).toBool();
 
             // if client or server wants ssl start encryption
@@ -320,6 +326,32 @@ namespace Nats
         auto info_message = m_socket.readAll();
         DEBUG(info_message);
 
+        QJsonObject json = parse_info(info_message);
+        bool ssl_required = json.value(QStringLiteral("ssl_required")).toBool();
+
+        // if client or server wants ssl start encryption
+        if(options.ssl || options.ssl_required || ssl_required)
+        {
+            DEBUG("starting SSL/TLS encryption");
+            if(!options.ssl_verify)
+                m_socket.setPeerVerifyMode(QSslSocket::VerifyNone);
+
+            if(!options.ssl_ca.isEmpty())
+            {
+                QSslConfiguration config = m_socket.sslConfiguration();
+                config.setCaCertificates(QSslCertificate::fromPath(options.ssl_ca));
+            }
+
+            if(!options.ssl_key.isEmpty())
+                m_socket.setPrivateKey(options.ssl_key);
+
+            if(!options.ssl_cert.isEmpty())
+                m_socket.setLocalCertificate(options.ssl_cert);
+
+            m_socket.startClientEncryption();
+            m_socket.waitForEncrypted();
+        }
+
         send_info(options);
         set_listeners();
 
@@ -343,6 +375,14 @@ namespace Nats
         DEBUG("send info message:" << message);
 
         m_socket.write(message.toUtf8());
+    }
+
+    inline QJsonObject Client::parse_info(const QByteArray &message)
+    {
+        DEBUG(message);
+
+        // discard 'INFO '
+        return QJsonDocument::fromJson(message.mid(5)).object();
     }
 
     inline void Client::publish(const QString &subject, const QString &message)

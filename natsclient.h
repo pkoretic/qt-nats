@@ -152,8 +152,8 @@ namespace Nats
         //! \param port
         //! synchronous version of connect, waits until connections with nats server is valid
         //! this will still fire 'connected' signal if one wants to use that instead
-        void connectSync(const QString &host = "127.0.0.1", uint64_t port = 4222);
-        void connectSync(const QString &host, uint64_t port, const Options &options);
+        bool connectSync(const QString &host = "127.0.0.1", uint64_t port = 4222);
+        bool connectSync(const QString &host, uint64_t port, const Options &options);
 
     private:
 
@@ -271,6 +271,7 @@ namespace Nats
             if(options.ssl || options.ssl_required || ssl_required)
             {
                 DEBUG("starting SSL/TLS encryption");
+
                 if(!options.ssl_verify)
                     m_socket.setPeerVerifyMode(QSslSocket::VerifyNone);
 
@@ -306,12 +307,12 @@ namespace Nats
         m_socket.connectToHost(host, port);
     }
 
-    inline void Client::connectSync(const QString &host, uint64_t port)
+    inline bool Client::connectSync(const QString &host, uint64_t port)
     {
-        connectSync(host, port, m_options);
+        return connectSync(host, port, m_options);
     }
 
-    inline void Client::connectSync(const QString &host, uint64_t port, const Options &options)
+    inline bool Client::connectSync(const QString &host, uint64_t port, const Options &options)
     {
         QObject::connect(&m_socket, static_cast<void(QAbstractSocket::*)(QAbstractSocket::SocketError)>(&QAbstractSocket::error), [](QAbstractSocket::SocketError socketError)
         {
@@ -319,12 +320,14 @@ namespace Nats
         });
 
         m_socket.connectToHost(host, port);
-        m_socket.waitForConnected();
-        m_socket.waitForReadyRead();
+        if(!m_socket.waitForConnected())
+            return false;
+
+        if(!m_socket.waitForReadyRead())
+            return false;
 
         // receive first info message
         auto info_message = m_socket.readAll();
-        DEBUG(info_message);
 
         QJsonObject json = parse_info(info_message);
         bool ssl_required = json.value(QStringLiteral("ssl_required")).toBool();
@@ -333,6 +336,7 @@ namespace Nats
         if(options.ssl || options.ssl_required || ssl_required)
         {
             DEBUG("starting SSL/TLS encryption");
+
             if(!options.ssl_verify)
                 m_socket.setPeerVerifyMode(QSslSocket::VerifyNone);
 
@@ -349,13 +353,17 @@ namespace Nats
                 m_socket.setLocalCertificate(options.ssl_cert);
 
             m_socket.startClientEncryption();
-            m_socket.waitForEncrypted();
+
+            if(!m_socket.waitForEncrypted())
+                return false;
         }
 
         send_info(options);
         set_listeners();
 
         emit connected();
+
+        return true;
     }
 
     inline void Client::send_info(const Options &options)

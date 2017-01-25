@@ -213,7 +213,7 @@ namespace Nats
     inline Client::Client(QObject *parent) : QObject(parent)
     {
         QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-        _debug_mode = (env.value("DEBUG").indexOf("qt-nats") != -1);
+        _debug_mode = (env.value(QStringLiteral("DEBUG")).indexOf("qt-nats") != -1);
 
         if(_debug_mode)
             DEBUG("debug mode");
@@ -259,7 +259,7 @@ namespace Nats
             DEBUG(info_message);
 
             QJsonObject json = QJsonDocument::fromJson(info_message.mid(5)).object();
-            bool ssl_required = json.value("ssl_required").toBool();
+            bool ssl_required = json.value(QStringLiteral("ssl_required")).toBool();
 
             // if client or server wants ssl start encryption
             if(options.ssl || options.ssl_required || ssl_required)
@@ -352,7 +352,7 @@ namespace Nats
 
     inline void Client::publish(const QString &subject, const QString &message, const QString &inbox)
     {
-        QString body = "PUB " % subject % " " % inbox % (inbox.isEmpty() ? "" : " ") % QString::number(message.length()) % CLRF % message % CLRF;
+        QString body = QStringLiteral("PUB ") % subject % " " % inbox % (inbox.isEmpty() ? "" : " ") % QString::number(message.length()) % CLRF % message % CLRF;
 
         DEBUG("published:" << body);
 
@@ -368,7 +368,7 @@ namespace Nats
     {
         m_callbacks[++m_ssid] = callback;
 
-        QString message = "SUB " % subject % " " % queue % (queue.isEmpty() ? "" : " ") % QString::number(m_ssid) % CLRF;
+        QString message = QStringLiteral("SUB ") % subject % " " % queue % (queue.isEmpty() ? "" : " ") % QString::number(m_ssid) % CLRF;
 
         m_socket.write(message.toUtf8());
 
@@ -395,7 +395,7 @@ namespace Nats
 
     inline void Client::unsubscribe(uint64_t ssid, int max_messages)
     {
-        QString message = "UNSUB " % QString::number(ssid) % (max_messages > 0 ? QString(" %1").arg(max_messages) : "") % CLRF;
+        QString message = QStringLiteral("UNSUB ") % QString::number(ssid) % (max_messages > 0 ? QString(" %1").arg(max_messages) : "") % CLRF;
 
         DEBUG("unsubscribed:" << message);
 

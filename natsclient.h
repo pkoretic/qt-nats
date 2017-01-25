@@ -463,7 +463,7 @@ namespace Nats
             operation = buffer.mid(last_pos, current_pos - last_pos);
 
             // if this is PING operation, reply
-            if(operation.compare("PING", Qt::CaseInsensitive) == 0)
+            if(operation.compare(QStringLiteral("PING"), Qt::CaseInsensitive) == 0)
             {
                 DEBUG("sending pong");
                 m_socket.write(QString("PONG" % CLRF).toUtf8());
@@ -471,7 +471,7 @@ namespace Nats
                 continue;
             }
             // +OK operation
-            else if(operation.compare("+OK", Qt::CaseInsensitive) == 0)
+            else if(operation.compare(QStringLiteral("+OK"), Qt::CaseInsensitive) == 0)
             {
                 DEBUG("+OK");
                 last_pos = current_pos + CLRF.length();
@@ -483,13 +483,13 @@ namespace Nats
                 QStringRef error_message = operation.mid(4);
                 qCritical() << "error" << error_message;
 
-                if(error_message.compare("Invalid Subject") != 0)
+                if(error_message.compare(QStringLiteral("Invalid Subject")) != 0)
                     m_socket.close();
 
                 return false;
             }
             // only MSG should be now left
-            else if(operation.indexOf("MSG", Qt::CaseInsensitive) == -1)
+            else if(operation.indexOf(QStringLiteral("MSG"), Qt::CaseInsensitive) == -1)
             {
                 qCritical() << "invalid message";
                 return false;

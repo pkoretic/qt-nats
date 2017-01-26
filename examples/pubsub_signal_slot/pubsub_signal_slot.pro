@@ -3,7 +3,7 @@ QT -= gui
 
 CONFIG += c++11
 
-TARGET = pubsub
+TARGET = pubsub_signal_slot
 CONFIG += console
 CONFIG -= app_bundle
 

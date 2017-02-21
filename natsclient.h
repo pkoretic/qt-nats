@@ -570,7 +570,7 @@ namespace Nats
                 break;
             }
 
-            if(current_pos + message_len + CLRF.length() > buffer.length())
+            if(current_pos + message_len + CLRF.length() > buffer.toUtf8().length())
             {
                 DEBUG("message not in buffer, waiting");
                 break;

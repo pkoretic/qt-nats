@@ -496,7 +496,7 @@ namespace Nats
         // track movement inside buffer for parsing
         int last_pos = 0, current_pos = 0;
 
-        while(last_pos != buffer.length())
+        while(last_pos != buffer.toUtf8.length())
         {
 
             // we always get delimited message

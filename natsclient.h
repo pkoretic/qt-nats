@@ -10,6 +10,7 @@
 #include <QSslSocket>
 #include <QStringBuilder>
 #include <QUuid>
+#include <QTextCodec>
 
 #include <memory>
 
@@ -214,7 +215,7 @@ namespace Nats
         //! \brief process_inboud
         //! \param buffer
         //! process messages from buffer
-        bool process_inboud(const QStringRef &buffer);
+        bool process_inboud(const QByteArray &buffer);
     };
 
     inline Client::Client(QObject *parent) : QObject(parent)
@@ -261,7 +262,6 @@ namespace Nats
         *signal = QObject::connect(&m_socket, &QSslSocket::readyRead, [this, signal, options, callback]
         {
             QObject::disconnect(*signal);
-
             QByteArray info_message = m_socket.readAll();
 
             QJsonObject json = parse_info(info_message);
@@ -478,10 +478,8 @@ namespace Nats
             int clrf_pos = m_buffer.lastIndexOf("\r\n");
             if(clrf_pos != -1)
             {
-                QString sbuffer(m_buffer.left(clrf_pos + CLRF.length()));
-                QStringRef bufferRef(&sbuffer);
-
-                process_inboud(bufferRef);
+                QByteArray msg_buffer = m_buffer.left(clrf_pos + CLRF.length());
+                process_inboud(msg_buffer);
             }
         });
     }
@@ -489,14 +487,14 @@ namespace Nats
     // parse incoming messages, see http://nats.io/documentation/internals/nats-protocol
     // QStringRef is used so we don't do any allocation
     // TODO: error on invalid message
-    inline bool Client::process_inboud(const QStringRef &buffer)
+    inline bool Client::process_inboud(const QByteArray &buffer)
     {
         DEBUG("handle message:" << buffer);
 
         // track movement inside buffer for parsing
         int last_pos = 0, current_pos = 0;
 
-        while(last_pos != buffer.toUtf8().length())
+        while(last_pos != buffer.length())
         {
 
             // we always get delimited message
@@ -507,8 +505,7 @@ namespace Nats
                 break;
             }
 
-            QStringRef operation, message;
-            operation = buffer.mid(last_pos, current_pos - last_pos);
+            QString operation(buffer.mid(last_pos, current_pos - last_pos));
 
             // if this is PING operation, reply
             if(operation.compare(QStringLiteral("PING"), Qt::CaseInsensitive) == 0)
@@ -528,7 +525,7 @@ namespace Nats
             // if -ERR, close client connection | -ERR <error message>
             else if(operation.indexOf("-ERR", 0, Qt::CaseInsensitive) != -1)
             {
-                QStringRef error_message = operation.mid(4);
+                QStringRef error_message = &(operation.mid(4));
                 qCritical() << "error" << error_message;
 
                 if(error_message.compare(QStringLiteral("Invalid Subject")) != 0)
@@ -537,9 +534,11 @@ namespace Nats
                 return false;
             }
             // only MSG should be now left
-            else if(operation.indexOf(QStringLiteral("MSG"), Qt::CaseInsensitive) == -1)
+            else if(operation.indexOf(QStringLiteral("MSG"), Qt::CaseInsensitive) != 0)
             {
-                qCritical() << "invalid message";
+                qCritical() << "invalid message - no message left";
+                
+                m_buffer.remove(0,current_pos + CLRF.length());
                 return false;
             }
 
@@ -551,37 +550,36 @@ namespace Nats
             int message_len = 0;
             QStringRef subject, sid, inbox;
 
-            QVector<QStringRef> parts = operation.split(" ", QString::SkipEmptyParts);
+            QStringList parts = operation.split(" ", QString::SkipEmptyParts);
 
             current_pos += CLRF.length();
-
             if(parts.length() == 4)
             {
                 message_len = parts[3].toLong();
             }
             else if (parts.length() == 5)
             {
-                inbox = parts[3];
+                inbox = &(parts[3]);
                 message_len = parts[4].toLong();
             }
             else
             {
-                qCritical() <<  "invalid message";
+                qCritical() <<  "invalid message - wrong length" << parts.length();
                 break;
             }
 
-            if(current_pos + message_len + CLRF.length() > buffer.toUtf8().length())
+            if(current_pos + message_len + CLRF.length() > buffer.length())
             {
                 DEBUG("message not in buffer, waiting");
                 break;
             }
 
             operation = parts[0];
-            subject = parts[1];
-            sid = parts[2];
+            subject = &(parts[1]);
+            sid = &(parts[2]);
             uint64_t ssid = sid.toLongLong();
 
-            message = buffer.mid(current_pos, message_len);
+            QString message(buffer.mid(current_pos, message_len));
             last_pos = current_pos + message_len + CLRF.length();
 
             DEBUG("message:" << message);
@@ -589,7 +587,7 @@ namespace Nats
             // call correct subscription callback
             if(m_callbacks.contains(ssid))
             {
-                m_callbacks[ssid](message.toString(), inbox.toString(), subject.toString());
+                m_callbacks[ssid](QString(message), inbox.toString(), subject.toString());
             }
             else
                 qWarning() << "invalid callback";

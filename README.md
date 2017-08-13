@@ -7,7 +7,7 @@ A [Qt5](https://www.qt.io) C++11 client for the [NATS messaging system](https://
 ## Installation
 
 This is a header-only library that depends on Qt5. All you have to do is include it inside your
-project:
+project. Please see [examples](examples) for more information.
 
 ```
 #include <QCoreApplication>

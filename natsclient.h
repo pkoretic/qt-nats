@@ -525,7 +525,7 @@ namespace Nats
             // if -ERR, close client connection | -ERR <error message>
             else if(operation.indexOf("-ERR", 0, Qt::CaseInsensitive) != -1)
             {
-                QStringRef error_message = &(operation.mid(4));
+                QString error_message = operation.mid(4);
                 qCritical() << "error" << error_message;
 
                 if(error_message.compare(QStringLiteral("Invalid Subject")) != 0)

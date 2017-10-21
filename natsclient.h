@@ -136,6 +136,11 @@ namespace Nats
         //! signal that the client is connected
         void connected();
 
+        //!
+        //! \brief disconnected
+        //! signal that the client is disconnected
+        void disconnected();
+
     public slots:
 
         //!
@@ -146,6 +151,11 @@ namespace Nats
         //! after valid connection is established 'connected' signal is emmited
         void connect(const QString &host = "127.0.0.1", uint64_t port = 4222, ConnectCallback callback = nullptr);
         void connect(const QString &host, uint64_t port, const Options &options, ConnectCallback callback = nullptr);
+
+        //!
+        //! \brief disconnect
+        //! disconnect from server by closing socket
+        void disconnect();
 
         //!
         //! \brief connectSync
@@ -234,6 +244,10 @@ namespace Nats
 
     inline void Client::connect(const QString &host, uint64_t port, const Options &options, ConnectCallback callback)
     {
+        // Check is client socket is already connected and return if it's`
+        if (m_socket.isOpen())
+            return;
+
         QObject::connect(&m_socket, static_cast<void(QAbstractSocket::*)(QAbstractSocket::SocketError)>(&QAbstractSocket::error), [](QAbstractSocket::SocketError socketError)
         {
             qCritical() << "error" << socketError;
@@ -255,6 +269,15 @@ namespace Nats
                     callback();
 
                 emit connected();
+        });
+
+        QObject::connect(&m_socket, &QSslSocket::disconnected, [this]()
+        {
+            DEBUG("socket disconnected");
+            emit disconnected();
+
+            // Disconnect everything connected to an m_socket's signals
+            QObject::disconnect(&m_socket, 0, 0, 0);
         });
 
         // receive first info message and disconnect
@@ -305,6 +328,12 @@ namespace Nats
         DEBUG("connect started" << host << port);
 
         m_socket.connectToHost(host, port);
+    }
+
+    inline void Client::disconnect()
+    {
+        m_socket.flush();
+        m_socket.close();
     }
 
     inline bool Client::connectSync(const QString &host, uint64_t port)
@@ -525,7 +554,8 @@ namespace Nats
             // if -ERR, close client connection | -ERR <error message>
             else if(operation.indexOf("-ERR", 0, Qt::CaseInsensitive) != -1)
             {
-                QStringRef error_message = &(operation.mid(4));
+                QStringRef error_message = operation.midRef(4);
+
                 qCritical() << "error" << error_message;
 
                 if(error_message.compare(QStringLiteral("Invalid Subject")) != 0)
@@ -537,7 +567,7 @@ namespace Nats
             else if(operation.indexOf(QStringLiteral("MSG"), Qt::CaseInsensitive) != 0)
             {
                 qCritical() << "invalid message - no message left";
-                
+
                 m_buffer.remove(0,current_pos + CLRF.length());
                 return false;
             }

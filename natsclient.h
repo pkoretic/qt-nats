@@ -504,7 +504,7 @@ namespace Nats
             m_buffer +=  m_socket.readAll();
 
             // process message if exists
-            int clrf_pos = m_buffer.lastIndexOf("\r\n");
+            int clrf_pos = m_buffer.lastIndexOf(CLRF);
             if(clrf_pos != -1)
             {
                 QByteArray msg_buffer = m_buffer.left(clrf_pos + CLRF.length());

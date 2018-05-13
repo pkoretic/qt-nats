@@ -27,11 +27,7 @@ namespace Nats
     //! holds all client options
     struct Options
     {
-        //!
-        //! \brief verbose
-        //!
         bool verbose = false;
-
         bool pedantic = false;
         bool ssl_required = false;
         bool ssl = false;
@@ -525,7 +521,6 @@ namespace Nats
 
         while(last_pos != buffer.length())
         {
-
             // we always get delimited message
             current_pos = buffer.indexOf(CLRF, last_pos);
             if(current_pos == -1)
@@ -616,9 +611,7 @@ namespace Nats
 
             // call correct subscription callback
             if(m_callbacks.contains(ssid))
-            {
                 m_callbacks[ssid](QString(message), inbox.toString(), subject.toString());
-            }
             else
                 qWarning() << "invalid callback";
         }
@@ -628,7 +621,6 @@ namespace Nats
 
         return true;
     }
-
 }
 
 #endif // NATSCLIENT_H

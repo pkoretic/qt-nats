@@ -143,3 +143,16 @@ QObject::connect(&client, &Nats::Client::connected, [&client]
 
 client.connect("127.0.0.1", 4222);
 ```
+
+## Debug mode
+
+For extra debug information env variable can be used:
+
+```
+export DEBUG=qt-nats
+```
+or
+
+```
+DEBUG=qt-nats ./program
+```

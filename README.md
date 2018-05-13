@@ -111,7 +111,10 @@ Nats::Options options;
 // for development
 options.ssl_verify = false;
 
-// to provide relevant options use options.ssl_ca, options.ssl_key, options.ssl_cert
+// set relevant ssl options
+options.ssl_ca = "/path/to/ca.crt";
+options.ssl_key = "/path/to/local.key";
+options.ssl_cert = "/path/to/local.crt";
 
 client.connect("127.0.0.1", 4222, options, [&client]
 {

@@ -240,7 +240,7 @@ namespace Nats
 
     inline void Client::connect(const QString &host, uint64_t port, const Options &options, ConnectCallback callback)
     {
-        // Check is client socket is already connected and return if it's`
+        // Check is client socket is already connected and return if it is
         if (m_socket.isOpen())
             return;
 

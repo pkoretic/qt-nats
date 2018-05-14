@@ -256,15 +256,15 @@ namespace Nats
 
         QObject::connect(&m_socket, &QSslSocket::encrypted, [this, options, callback]
         {
-                DEBUG("SSL/TLS successful");
+            DEBUG("SSL/TLS successful");
 
-                send_info(options);
-                set_listeners();
+            send_info(options);
+            set_listeners();
 
-                if(callback)
-                    callback();
+            if(callback)
+                callback();
 
-                emit connected();
+            emit connected();
         });
 
         QObject::connect(&m_socket, &QSslSocket::disconnected, [this]()

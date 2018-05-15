@@ -144,6 +144,26 @@ QObject::connect(&client, &Nats::Client::connected, [&client]
 client.connect("127.0.0.1", 4222);
 ```
 
+## Errors and signals
+
+Catch errors:
+```
+QObject::connect(&client, &Nats::Client::error, [](const QString &error)
+{
+    qDebug() << error;
+});
+
+```
+
+Catch connection disconnect:
+```
+QObject::connect(&client, &Nats::Client::disconnected, []
+{
+    qDebug() << "disconnected";
+});
+
+```
+
 ## Debug mode
 
 For extra debug information env variable can be used:

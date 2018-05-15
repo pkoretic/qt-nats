@@ -53,7 +53,6 @@ namespace Nats
     public:
         explicit Subscription(QObject *parent = 0): QObject(parent) {}
 
-        QString error;
         QString subject;
         QString message;
         QString inbox;
@@ -131,6 +130,11 @@ namespace Nats
         //! \brief connected
         //! signal that the client is connected
         void connected();
+
+        //!
+        //! \brief connected
+        //! signal that the client is connected
+        void error(const QString);
 
         //!
         //! \brief disconnected
@@ -244,14 +248,18 @@ namespace Nats
         if (m_socket.isOpen())
             return;
 
-        QObject::connect(&m_socket, static_cast<void(QAbstractSocket::*)(QAbstractSocket::SocketError)>(&QAbstractSocket::error), [](QAbstractSocket::SocketError socketError)
+        QObject::connect(&m_socket, static_cast<void(QAbstractSocket::*)(QAbstractSocket::SocketError)>(&QAbstractSocket::error), [this](QAbstractSocket::SocketError socketError)
         {
-            qCritical() << "error" << socketError;
+            DEBUG(socketError);
+
+            emit error(m_socket.errorString());
         });
 
         QObject::connect(&m_socket, static_cast<void(QSslSocket::*)(const QList<QSslError> &)>(&QSslSocket::sslErrors),[this](const QList<QSslError> &errors)
         {
-            qWarning() << errors;
+            DEBUG(errors);
+
+            emit error(m_socket.errorString());
         });
 
         QObject::connect(&m_socket, &QSslSocket::encrypted, [this, options, callback]
@@ -339,9 +347,11 @@ namespace Nats
 
     inline bool Client::connectSync(const QString &host, uint64_t port, const Options &options)
     {
-        QObject::connect(&m_socket, static_cast<void(QAbstractSocket::*)(QAbstractSocket::SocketError)>(&QAbstractSocket::error), [](QAbstractSocket::SocketError socketError)
+        QObject::connect(&m_socket, static_cast<void(QAbstractSocket::*)(QAbstractSocket::SocketError)>(&QAbstractSocket::error), [this](QAbstractSocket::SocketError socketError)
         {
-            qDebug() << "error" << socketError;
+            DEBUG(socketError);
+
+            emit error(m_socket.errorString());
         });
 
         m_socket.connectToHost(host, port);

@@ -435,7 +435,7 @@ namespace Nats
 
     inline void Client::publish(const QString &subject, const QString &message, const QString &inbox)
     {
-        QString body = QStringLiteral("PUB ") % subject % " " % inbox % (inbox.isEmpty() ? "" : " ") % QString::number(message.length()) % CLRF % message % CLRF;
+        QString body = QStringLiteral("PUB ") % subject % " " % inbox % (inbox.isEmpty() ? "" : " ") % QString::number(message.toUtf8().length()) % CLRF % message % CLRF;
 
         DEBUG("published:" << body);
 

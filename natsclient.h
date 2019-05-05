@@ -51,7 +51,7 @@ namespace Nats
         Q_OBJECT
 
     public:
-        explicit Subscription(QObject *parent = 0): QObject(parent) {}
+        explicit Subscription(QObject *parent = nullptr): QObject(parent) {}
 
         QString subject;
         QString message;
@@ -70,7 +70,7 @@ namespace Nats
     {
         Q_OBJECT
     public:
-        explicit Client(QObject *parent = 0);
+        explicit Client(QObject *parent = nullptr);
 
         //!
         //! \brief publish
@@ -149,8 +149,8 @@ namespace Nats
         //! \param port
         //! connect to server with given host and port options
         //! after valid connection is established 'connected' signal is emmited
-        void connect(const QString &host = "127.0.0.1", uint64_t port = 4222, ConnectCallback callback = nullptr);
-        void connect(const QString &host, uint64_t port, const Options &options, ConnectCallback callback = nullptr);
+        void connect(const QString &host = "127.0.0.1", quint16 port = 4222, ConnectCallback callback = nullptr);
+        void connect(const QString &host, quint16 port, const Options &options, ConnectCallback callback = nullptr);
 
         //!
         //! \brief disconnect
@@ -163,8 +163,8 @@ namespace Nats
         //! \param port
         //! synchronous version of connect, waits until connections with nats server is valid
         //! this will still fire 'connected' signal if one wants to use that instead
-        bool connectSync(const QString &host = "127.0.0.1", uint64_t port = 4222);
-        bool connectSync(const QString &host, uint64_t port, const Options &options);
+        bool connectSync(const QString &host = "127.0.0.1", quint16 port = 4222);
+        bool connectSync(const QString &host, quint16 port, const Options &options);
 
     private:
 
@@ -237,12 +237,12 @@ namespace Nats
             DEBUG("debug mode");
     }
 
-    inline void Client::connect(const QString &host, uint64_t port, ConnectCallback callback)
+    inline void Client::connect(const QString &host, quint16 port, ConnectCallback callback)
     {
         connect(host, port, m_options, callback);
     }
 
-    inline void Client::connect(const QString &host, uint64_t port, const Options &options, ConnectCallback callback)
+    inline void Client::connect(const QString &host, quint16 port, const Options &options, ConnectCallback callback)
     {
         // Check is client socket is already connected and return if it is
         if (m_socket.isOpen())
@@ -281,7 +281,7 @@ namespace Nats
             emit disconnected();
 
             // Disconnect everything connected to an m_socket's signals
-            QObject::disconnect(&m_socket, 0, 0, 0);
+            QObject::disconnect(&m_socket, nullptr, nullptr, nullptr);
         });
 
         // receive first info message and disconnect
@@ -340,12 +340,12 @@ namespace Nats
         m_socket.close();
     }
 
-    inline bool Client::connectSync(const QString &host, uint64_t port)
+    inline bool Client::connectSync(const QString &host, quint16 port)
     {
         return connectSync(host, port, m_options);
     }
 
-    inline bool Client::connectSync(const QString &host, uint64_t port, const Options &options)
+    inline bool Client::connectSync(const QString &host, quint16 port, const Options &options)
     {
         QObject::connect(&m_socket, static_cast<void(QAbstractSocket::*)(QAbstractSocket::SocketError)>(&QAbstractSocket::error), [this](QAbstractSocket::SocketError socketError)
         {
@@ -464,7 +464,7 @@ namespace Nats
     {
         auto subscription = new Subscription;
 
-        subscription->ssid = subscribe(subject, "", [this, subscription](const QString &message, const QString &subject, const QString &inbox)
+        subscription->ssid = subscribe(subject, "", [subscription](const QString &message, const QString &subject, const QString &inbox)
         {
             subscription->message = message;
             subscription->subject = subject;
@@ -590,12 +590,12 @@ namespace Nats
             current_pos += CLRF.length();
             if(parts.length() == 4)
             {
-                message_len = parts[3].toLong();
+                message_len = parts[3].toInt();
             }
             else if (parts.length() == 5)
             {
                 inbox = &(parts[3]);
-                message_len = parts[4].toLong();
+                message_len = parts[4].toInt();
             }
             else
             {
@@ -612,7 +612,7 @@ namespace Nats
             operation = parts[0];
             subject = &(parts[1]);
             sid = &(parts[2]);
-            uint64_t ssid = sid.toLongLong();
+            uint64_t ssid = sid.toULong();
 
             QString message(buffer.mid(current_pos, message_len));
             last_pos = current_pos + message_len + CLRF.length();

@@ -1,13 +1,48 @@
 # qt-nats
-A [Qt5](https://www.qt.io) C++11 client for the [NATS messaging system](https://nats.io).
+A [Qt](https://www.qt.io) C++11 client for the [NATS messaging system](https://nats.io).
 
 [![License MIT](https://cdn.rawgit.com/pkoretic/qt-nats/badges/license.svg)](http://opensource.org/licenses/MIT)
 [![Language (C++)](https://cdn.rawgit.com/pkoretic/qt-nats/badges/powered_by-C%2B%2B-blue.svg)](http://en.cppreference.com/w/cpp/language)
 
 ## Installation
 
-This is a header-only library that depends on Qt5. All you have to do is include it inside your
-project. It depends on the Qt `network` module so don't forget to add it to your `project-name.pro` file (```QT += network```).
+*NB: This specific branch was adapted to work with Qt 6.*
+
+This is a header-only library that depends on Qt. All you have to do is to include a copy of `natsclient.h` to your
+project sources directory, making sure the Qt `Network` module is properly linking to your application(s). Follow the instructions below according to your project's build system. 
+
+
+### CMake
+
+In the project's `CMakeLists.txt`:
+
+```
+# Add Network module
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Network REQUIRED)
+
+# Add natsclient.h to the project's sources 
+set(PROJECT_SOURCES
+        main.cpp
+        dialog.cpp
+        dialog.h
+        dialog.ui
+        resources.qrc
+        # ... other source files
+        # ...
+        natsclient.h  # <--- Add this line
+)
+
+# Link Network module
+target_link_libraries(MensajeroSMS PRIVATE  Qt${QT_VERSION_MAJOR}::Network)
+
+```
+
+
+### QMake
+
+For QMake projects, you need to add the `network` module to your `project-name.pro` file (```QT += network```).
+
+
 
 For more information see **[examples](examples)**.
 
@@ -17,9 +52,9 @@ For more information see **[examples](examples)**.
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
+    QCoreApplication app(argc, argv);
 
-    Nats::Client client;
+    Nats::Client client(&app);
     client.connect("127.0.0.1", 4222, [&]
     {
         // simple subscribe
@@ -32,14 +67,14 @@ int main(int argc, char *argv[])
         client.publish("foo", "Hello NATS!");
     });
 
-    return a.exec();
+    return app.exec();
 }
 ```
 
 ## Basic usage
 
 ```
-Nats::Client client;
+Nats::Client client(&parentQObject);
 client.connect("127.0.0.1", 4222, [&]
 {
     // simple publish
@@ -66,7 +101,7 @@ client.connect("127.0.0.1", 4222, [&]
 
 ## Queue Groups
 
-All subscriptions with the same queue name will form a queue group.  Each
+All subscriptions with the same queue name will form a queue group. Each
 message will be delivered to only one subscriber per queue group, queuing
 semantics. You can have as many queue groups as you wish.  Normal subscribers
 will continue to work as expected.
@@ -81,7 +116,7 @@ client.subscribe("foo", "job.workers", [](QString message, QString reply_inbox, 
 ## Authentication
 
 ```
-Nats::Client client;
+Nats::Client client(&parentQObject);
 Nats::Options options;
 
 // username/password
@@ -105,7 +140,7 @@ client.connect("127.0.0.1", 4222, options, []
 
 ## TLS/SSL
 ```
-Nats::Client client;
+Nats::Client client(&parentQObject);
 Nats::Options options;
 
 // for development
@@ -127,7 +162,7 @@ client.connect("127.0.0.1", 4222, options, [&client]
 This is Qt specific. If you are used to using Qt signals & slots or you just prefer them over callbacks:
 
 ```
-Nats::Client client;
+Nats::Client client(&parentQObject);
 
 QObject::connect(&client, &Nats::Client::connected, [&client]
 {

@@ -10,9 +10,8 @@
 #include <QSslSocket>
 #include <QStringBuilder>
 #include <QUuid>
-#include <QTextCodec>
 
-#include <memory>
+//#include <memory>
 
 namespace Nats
 {
@@ -87,7 +86,7 @@ namespace Nats
         //! \return subscription id
         //! subscribe to given subject
         //! when message is received, callback is fired
-        uint64_t subscribe(const QString &subject, MessageCallback callback);
+        uint64_t subscribe(const QString &subject, Nats::MessageCallback callback);
 
         //!
         //! \brief subscribe
@@ -99,7 +98,7 @@ namespace Nats
         //! subscribe to given subject and queue
         //! when message is received, callback is fired
         //! each message will be delivered to only one subscriber per queue group
-        uint64_t subscribe(const QString &subject, const QString &queue, MessageCallback callback);
+        uint64_t subscribe(const QString &subject, const QString &queue, Nats::MessageCallback callback);
 
         //!
         //! \brief subscribe
@@ -121,8 +120,8 @@ namespace Nats
         //! \param message
         //! \return
         //! make request using given subject and optional message
-        uint64_t request(const QString subject, const QString message, MessageCallback callback);
-        uint64_t request(const QString subject, MessageCallback callback);
+        uint64_t request(const QString subject, const QString message, Nats::MessageCallback callback);
+        uint64_t request(const QString subject, Nats::MessageCallback callback);
 
     signals:
 
@@ -149,8 +148,8 @@ namespace Nats
         //! \param port
         //! connect to server with given host and port options
         //! after valid connection is established 'connected' signal is emmited
-        void connect(const QString &host = "127.0.0.1", quint16 port = 4222, ConnectCallback callback = nullptr);
-        void connect(const QString &host, quint16 port, const Options &options, ConnectCallback callback = nullptr);
+        void connect(const QString &host = "127.0.0.1", quint16 port = 4222, Nats::ConnectCallback callback = nullptr);
+        void connect(const QString &host, quint16 port, const Nats::Options &options, Nats::ConnectCallback callback = nullptr);
 
         //!
         //! \brief disconnect
@@ -164,7 +163,7 @@ namespace Nats
         //! synchronous version of connect, waits until connections with nats server is valid
         //! this will still fire 'connected' signal if one wants to use that instead
         bool connectSync(const QString &host = "127.0.0.1", quint16 port = 4222);
-        bool connectSync(const QString &host, quint16 port, const Options &options);
+        bool connectSync(const QString &host, quint16 port, const Nats::Options &options);
 
     private:
 
@@ -176,7 +175,7 @@ namespace Nats
         //!
         //! \brief CLRF
         //! NATS protocol separator
-        const QString CLRF = "\r\n";
+        const QByteArray CLRF = "\r\n";
 
         //!
         //! \brief m_buffer
@@ -248,21 +247,21 @@ namespace Nats
         if (m_socket.isOpen())
             return;
 
-        QObject::connect(&m_socket, static_cast<void(QAbstractSocket::*)(QAbstractSocket::SocketError)>(&QAbstractSocket::error), [this](QAbstractSocket::SocketError socketError)
+        QObject::connect(&m_socket, &QAbstractSocket::errorOccurred, this, [this](QAbstractSocket::SocketError socketError)
         {
             DEBUG(socketError);
 
             emit error(m_socket.errorString());
         });
 
-        QObject::connect(&m_socket, static_cast<void(QSslSocket::*)(const QList<QSslError> &)>(&QSslSocket::sslErrors),[this](const QList<QSslError> &errors)
+        QObject::connect(&m_socket, static_cast<void(QSslSocket::*)(const QList<QSslError> &)>(&QSslSocket::sslErrors),this, [this](const QList<QSslError> &errors)
         {
             DEBUG(errors);
 
             emit error(m_socket.errorString());
         });
 
-        QObject::connect(&m_socket, &QSslSocket::encrypted, [this, options, callback]
+        QObject::connect(&m_socket, &QSslSocket::encrypted, this, [this, options, callback]
         {
             DEBUG("SSL/TLS successful");
 
@@ -275,7 +274,7 @@ namespace Nats
             emit connected();
         });
 
-        QObject::connect(&m_socket, &QSslSocket::disconnected, [this]()
+        QObject::connect(&m_socket, &QSslSocket::disconnected, this, [this]()
         {
             DEBUG("socket disconnected");
             emit disconnected();
@@ -286,7 +285,7 @@ namespace Nats
 
         // receive first info message and disconnect
         auto signal = std::make_shared<QMetaObject::Connection>();
-        *signal = QObject::connect(&m_socket, &QSslSocket::readyRead, [this, signal, options, callback]
+        *signal = QObject::connect(&m_socket, &QSslSocket::readyRead, this, [this, signal, options, callback]
         {
             QObject::disconnect(*signal);
             QByteArray info_message = m_socket.readAll();
@@ -347,7 +346,8 @@ namespace Nats
 
     inline bool Client::connectSync(const QString &host, quint16 port, const Options &options)
     {
-        QObject::connect(&m_socket, static_cast<void(QAbstractSocket::*)(QAbstractSocket::SocketError)>(&QAbstractSocket::error), [this](QAbstractSocket::SocketError socketError)
+         QObject::connect(&m_socket, &QAbstractSocket::errorOccurred, this, [this](QAbstractSocket::SocketError socketError)
+
         {
             DEBUG(socketError);
 
@@ -504,8 +504,9 @@ namespace Nats
     inline void Client::set_listeners()
     {
         DEBUG("set listeners");
-        QObject::connect(&m_socket, &QSslSocket::readyRead, [this]
+        QObject::connect(&m_socket, &QSslSocket::readyRead, this, [this]
         {
+
             // add new data to buffer
             m_buffer +=  m_socket.readAll();
 
@@ -520,7 +521,7 @@ namespace Nats
     }
 
     // parse incoming messages, see http://nats.io/documentation/internals/nats-protocol
-    // QStringRef is used so we don't do any allocation
+    // QStringView is used so we don't do unnecessary allocations
     // TODO: error on invalid message
     inline bool Client::process_inboud(const QByteArray &buffer)
     {
@@ -535,7 +536,7 @@ namespace Nats
             current_pos = buffer.indexOf(CLRF, last_pos);
             if(current_pos == -1)
             {
-                qCritical() << "CLRF not found, should not happen";
+                qCritical() << "CLRF not found, this should not happen";
                 break;
             }
 
@@ -559,7 +560,7 @@ namespace Nats
             // if -ERR, close client connection | -ERR <error message>
             else if(operation.indexOf("-ERR", 0, Qt::CaseInsensitive) != -1)
             {
-                QStringRef error_message = operation.midRef(4);
+                QStringView error_message = QStringView{operation}.mid(4);
 
                 qCritical() << "error" << error_message;
 
@@ -583,18 +584,19 @@ namespace Nats
             // if not, wait for next call, otherwise, extract all data
 
             int message_len = 0;
-            QStringRef subject, sid, inbox;
+            QString subject, sid, inbox;
 
-            QStringList parts = operation.split(" ", QString::SkipEmptyParts);
+            QList<QStringView> parts = QStringView{operation}.split(u" ", Qt::SkipEmptyParts);
 
             current_pos += CLRF.length();
+
             if(parts.length() == 4)
             {
                 message_len = parts[3].toInt();
             }
             else if (parts.length() == 5)
             {
-                inbox = &(parts[3]);
+                inbox = (parts[3]).toString();
                 message_len = parts[4].toInt();
             }
             else
@@ -609,9 +611,9 @@ namespace Nats
                 break;
             }
 
-            operation = parts[0];
-            subject = &(parts[1]);
-            sid = &(parts[2]);
+            operation = parts[0].toString();
+            subject = parts[1].toString();
+            sid = parts[2].toString();
             uint64_t ssid = sid.toULong();
 
             QString message(buffer.mid(current_pos, message_len));
@@ -620,10 +622,12 @@ namespace Nats
             DEBUG("message:" << message);
 
             // call correct subscription callback
-            if(m_callbacks.contains(ssid))
-                m_callbacks[ssid](QString(message), inbox.toString(), subject.toString());
-            else
+            if(m_callbacks.contains(ssid)){
+                auto callback = m_callbacks[ssid];
+                callback( QString(message), QString(inbox), QString(subject));
+            }else{
                 qWarning() << "invalid callback";
+            }
         }
 
         // remove processed messages from buffer

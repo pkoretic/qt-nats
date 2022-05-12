@@ -1,4 +1,8 @@
 # qt-nats
+
+*NB: This specific branch was adapted to work with Qt 6.*
+
+
 A [Qt](https://www.qt.io) C++11 client for the [NATS messaging system](https://nats.io).
 
 [![License MIT](https://cdn.rawgit.com/pkoretic/qt-nats/badges/license.svg)](http://opensource.org/licenses/MIT)
@@ -6,15 +10,13 @@ A [Qt](https://www.qt.io) C++11 client for the [NATS messaging system](https://n
 
 ## Installation
 
-*NB: This specific branch was adapted to work with Qt 6.*
-
 This is a header-only library that depends on Qt. All you have to do is to include a copy of `natsclient.h` to your
 project sources directory, making sure the Qt `Network` module is properly linking to your application(s). Follow the instructions below according to your project's build system. 
 
 
 ### CMake
 
-In the project's `CMakeLists.txt`:
+In your project's `CMakeLists.txt`:
 
 ```
 # Add Network module

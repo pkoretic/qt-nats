@@ -11,8 +11,6 @@
 #include <QStringBuilder>
 #include <QUuid>
 
-//#include <memory>
-
 namespace Nats
 {
     #define DEBUG(x) do { if (_debug_mode) { qDebug() << x; } } while (0)
@@ -622,10 +620,13 @@ namespace Nats
             DEBUG("message:" << message);
 
             // call correct subscription callback
-            if(m_callbacks.contains(ssid)){
+            if(m_callbacks.contains(ssid))
+            {
                 auto callback = m_callbacks[ssid];
-                callback( QString(message), QString(inbox), QString(subject));
-            }else{
+                callback(std::move(message), std::move(inbox), std::move(subject));
+            }
+            else
+            {
                 qWarning() << "invalid callback";
             }
         }

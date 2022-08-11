@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
 
     Nats::Client client;
 
-    client.connect("127.0.0.1", 4222, [&client, &a]()
+    client.connect("127.0.0.1", 4222, [&client]
     {
         client.subscribe("foo", [](QString message, QString reply_inbox, QString subject)
         {

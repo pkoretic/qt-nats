@@ -462,7 +462,7 @@ namespace Nats
     {
         auto subscription = new Subscription;
 
-        subscription->ssid = subscribe(subject, "", [subscription](const QString &message, const QString &subject, const QString &inbox)
+        subscription->ssid = subscribe(subject, "", [subscription](const QString &message, const QString &inbox, const QString &subject)
         {
             subscription->message = message;
             subscription->subject = subject;

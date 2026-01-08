@@ -121,6 +121,16 @@ namespace Nats
         uint64_t request(const QString subject, const QString message, Nats::MessageCallback callback);
         uint64_t request(const QString subject, Nats::MessageCallback callback);
 
+        //!
+        //! \brief ping
+        //! publish ping server to check if alive
+        void ping();
+
+        //!
+        //! \brief isConnected
+        //! check if this socket is connected
+        inline bool isConnected() const;
+
     signals:
 
         //!
@@ -337,6 +347,11 @@ namespace Nats
         m_socket.close();
     }
 
+    inline bool Client::isConnected() const
+    {
+        return m_socket.state() == QAbstractSocket::SocketState::ConnectedState;
+    }
+
     inline bool Client::connectSync(const QString &host, quint16 port)
     {
         return connectSync(host, port, m_options);
@@ -518,6 +533,16 @@ namespace Nats
         });
     }
 
+    inline void Client::ping()
+    {
+        QString body = QStringLiteral("PING") % CLRF;
+
+        DEBUG("published:" << body);
+
+        m_socket.write(body.toUtf8());
+    }
+
+
     // parse incoming messages, see http://nats.io/documentation/internals/nats-protocol
     // QStringView is used so we don't do unnecessary allocations
     // TODO: error on invalid message
@@ -545,6 +570,12 @@ namespace Nats
             {
                 DEBUG("sending pong");
                 m_socket.write(QString("PONG" % CLRF).toUtf8());
+                last_pos = current_pos + CLRF.length();
+                continue;
+            }
+            // PONG operation - just eat it, no action required.
+            else if (operation.compare(QStringLiteral("PONG"), Qt::CaseInsensitive) == 0)
+            {
                 last_pos = current_pos + CLRF.length();
                 continue;
             }

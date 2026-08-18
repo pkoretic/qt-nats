@@ -640,7 +640,6 @@ namespace Nats
                 break;
             }
 
-            operation = parts[0].toString();
             subject = parts[1].toString();
             sid = parts[2].toString();
             uint64_t ssid = sid.toULong();

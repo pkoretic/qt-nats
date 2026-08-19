@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2016 qt-nats contributors
+//
+// This file is part of qt-nats, a Qt C++ client for the NATS messaging system.
+// Distributed under the terms of the MIT License. See LICENSE for details.
+
 #ifndef NATSCLIENT_H
 #define NATSCLIENT_H
 

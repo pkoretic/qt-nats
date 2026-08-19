@@ -2,8 +2,8 @@
 
 A [Qt](https://www.qt.io) C++11 client for the [NATS messaging system](https://nats.io).
 
-[![License MIT](https://cdn.rawgit.com/pkoretic/qt-nats/badges/license.svg)](http://opensource.org/licenses/MIT)
-[![Language (C++)](https://cdn.rawgit.com/pkoretic/qt-nats/badges/powered_by-C%2B%2B-blue.svg)](http://en.cppreference.com/w/cpp/language)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Language (C++)](https://img.shields.io/badge/C%2B%2B-11-blue.svg)](https://en.cppreference.com/w/cpp/language)
 
 ## Installation
 
@@ -210,3 +210,8 @@ or
 ```
 DEBUG=qt-nats ./program
 ```
+
+## License
+
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
+See the [`LICENSE`](LICENSE) file for the full license text.
